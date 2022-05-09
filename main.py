@@ -147,7 +147,7 @@ def reply_text(o, sp, sn):
     ot = "I found **" + str(to) + '** occurance' + occs + ' of "*' + sp + '*" in **' + showref[sn] + "**. ";
     tl = "(" + os.environ.get("BASE_URL") + ")"
     if to > 1:
-        tl = "(" + os.environ.get("BASE_URL") + scored(sn, '_') + "/" + scored(sp, '+') + ")"
+        tl = "(" + os.environ.get("BASE_URL") + scored(showref[sn], '_') + "/" + scored(sp, '+') + ")"
     lt = nf + "ind more of your favorite phrases at [" + os.environ.get("WEB_URL") + "]" + tl + "."
     if to > 1:
         lt = "See the other **" + str(to - 1) + "** results and " + lt
@@ -208,9 +208,22 @@ def request_episodes(p, s):
     search = '+'.join(np)
     url = os.environ.get("API_URL") + show + "/?phrase=" + search
     res = requests.get(url)
-    sn = unscored(show.lower(), '_')
+    if res.status_code == 200:
+        sn = unscored(show.lower(), '_')
+        return [True, res.json(), ' '.join(np), sn]
 
-    return [True, res.json(), ' '.join(np), sn]
+    elif res.status_code == 303:
+        url = res.headers.location
+        nres = requests.get(url)
+        if nres.status_code == 200:
+            sn = unscored(show.lower(), '_')
+            return [True, nres.json(), ' '.join(np), sn]
+
+        else:
+            return [False, "Hmmm I wasn't able to find anything for this request. Maybe try again at [" + os.environ.get("WEB_URL") + "](" + os.environ.get("BASE_URL") + ")."]
+
+    else:
+        return [False, "Hmmm I wasn't able to find anything for this request. Maybe try again at [" + os.environ.get("WEB_URL") + "](" + os.environ.get("BASE_URL") + ")."]
 
 
 load_dotenv()
